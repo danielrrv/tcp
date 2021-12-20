@@ -123,7 +123,7 @@ int main(){
     char address_buffer[BUFFER_SIZE];
     /* Let's find out what the client network address interface.*/
     s = getnameinfo((struct sockaddr*)&client_address, client_len, address_buffer, sizeof(address_buffer), 0, 0, NI_NUMERICHOST);
-    if(s!=0 && strlen(address_buffer)==0){
+    if(s!=0 && strlen(address_buffer) == 0){
         handle_error("Error: Unable to obtain address name");
         close(socket_client);
         close(socket_listen);

@@ -107,23 +107,58 @@ int main(){
     }
 
     info("Waiting for connections...\n");
-    
+    /**
+     * Declares the files descriptors for monitoring with select.
+     */
     fd_set master;
+    /**
+     * This macro clear the set of file descriptors.
+     */
     FD_ZERO(&master);
+    /**
+     * Set the current socket into master and establish max socket as socket_listen.
+     */
     FD_SET(socket_listen, &master);
     int max_socket = socket_listen;
-
+    //Loop always.
     while(1){
+        //Temporal fd_set which will be updated by select function.
         fd_set reads;
         reads = master;
-        if(select(max_socket + 1, &reads, 0,0,0)<0){
+        /**
+         * Blocks until files descriptors become ready to for some class of  I/O operation.
+         * A file descriptor is consider ready if is possible to perform a corresponding  I/O operation.
+         */
+        if(select(max_socket + 1, &reads, 0, 0, 0) < 0){
             fprintf(stderr, "select() failed");
             return 1;
         }
         SOCKET i;
+        /**
+         * Select function above has modified &reads fd_set object.
+         * After select() has returned, &reads will be cleared of all files
+         * descriptors except  for those that are ready  for reading.
+         * 
+         * As kernel assigns sequential file descriptors, we must traverse file descriptor
+         * evaluate if the are set to perfome the corresponding I/O operation.
+         */
         for (i = 0; i <= max_socket; ++i){
+            // Case #1: fd is set in &reads
             if(FD_ISSET(i, &reads)){
-                if(i== socket_listen){
+                // The file descriptor is the server main socket in which it listens for clients.
+                if(i == socket_listen){
+                    /**
+                     * In this case.
+                     * 1. Allocate memory for client address object.
+                     * 2. accept the tcp connection to incoming client and get the fd associated.
+                     * 3. Include the fd into the master fd_set which are main fd_set.
+                     * 4. Se the recently added fd as max_socket for the PID.
+                     * 
+                     * The new client connection is set. Now the select must monitoring when the
+                     * fd is ready to perfome a read operation.
+                     * We don't read that from  client socket now, because the tcp connection set up doesn't
+                     * imply data right away. Preferably wait next loop.
+                     */
                     struct sockaddr_storage client_address;
                     socklen_t client_len =  sizeof(client_address);
                     SOCKET socket_client = accept(socket_listen, (struct sockaddr*)&client_address, &client_len);
@@ -131,13 +166,13 @@ int main(){
                         handle_error("Unable to accept connections");
                     }
                     FD_SET(socket_client, &master);
-                    if(socket_client>socket_listen){
+                    if(socket_client > socket_listen){
                         max_socket = socket_client;
                     }
                     char address_buffer[BUFFER_SIZE];
                     /* Let's find out what the client network address interface.*/
                     s = getnameinfo((struct sockaddr*)&client_address, client_len, address_buffer, sizeof(address_buffer), 0, 0, NI_NUMERICHOST);
-                    if(s!=0 && strlen(address_buffer)==0){
+                    if(s!=0 && strlen(address_buffer) == 0){
                         handle_error("Error: Unable to obtain address name");
                     }
                     fprintf(stdout, "New connection client: %s\n", address_buffer);
@@ -145,7 +180,7 @@ int main(){
                     info("Reading the request...\n");
                     char request[BUFFER_SIZE];
                     /*recv will read the content on the socket_client. request contains all user agent request data.*/
-                    int bytes_received = recv(i, request, 1024, 0);
+                    int bytes_received = recv(i, request, BUFFER_SIZE, 0);
                     if (bytes_received < 1){
                         FD_CLR(i, &master);
                         close(i);
