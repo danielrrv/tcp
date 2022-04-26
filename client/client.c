@@ -27,10 +27,10 @@ typedef int SOCKET;
 
 struct client_config_t
 {
-	char port[5];
+	char * port;
 	int address_family;
 } client_config = {
-	.port = {'8', '0', '8', '0', '\0'},
+	.port = "8080",
 	.address_family = AF_INET};
 
 static struct addrinfo *get_address_info(struct client_config_t config)
@@ -57,11 +57,11 @@ static bool create_unix_socket(SOCKET *socket_listen, struct addrinfo *bind_addr
 	return true;
 }
 
-static bool connect_unix_socket(SOCKET *socket_listen, struct addrinfo *bind_address)
+static bool connect_unix_socket(SOCKET socket_listen, struct addrinfo *bind_address)
 {
-	if (connect(*socket_listen, bind_address->ai_addr, bind_address->ai_addrlen))
+	if (connect(socket_listen, bind_address->ai_addr, bind_address->ai_addrlen))
 	{
-		close(*socket_listen);
+		close(socket_listen);
 		return false;
 	}
 	return true;
@@ -87,7 +87,7 @@ int main()
 	}
 	char hostname[1024];
 	get_name_info(bind_address, hostname);
-	if (!connect_unix_socket(&socket_listen, bind_address))
+	if (!connect_unix_socket(socket_listen, bind_address))
 	{
 		handle_error("Unable to connect");
 	}

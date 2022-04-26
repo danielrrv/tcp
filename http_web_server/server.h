@@ -16,6 +16,7 @@
 #include <time.h>
 
 
+//https://datatracker.ietf.org/doc/html/rfc7230#section-3.1.1
 static volatile int server_socket = 0;
 
 #define BUFFER_SIZE 1024
@@ -32,6 +33,17 @@ static volatile int server_socket = 0;
 		fprintf(stdout, msg); \
 	} while (0)
 typedef int socket_t;
+
+const static char *methods[] = {
+	"GET",
+	"POST",
+	"PUT",
+	"HEAD",
+	"OPTIONS",
+	"DELETE",
+	"CONNECT",
+	"TRACE",
+};
 
 typedef struct
 {
@@ -56,7 +68,7 @@ typedef struct
 	fd_set *master;
 } server_t;
 
-static struct addrinfo *get_address_info(char *host, char *port, int socket_type)
+static struct addrinfo *get_address_info(char *host, const char *port, int socket_type)
 {
 	struct addrinfo hints;
 	memset(&hints, 0, sizeof(hints));
@@ -103,7 +115,7 @@ static void listen_on(socket_t socket_listen)
 	}
 }
 
-void wait_for_client_on(server_t *server, char *http_port, void(callback)(void))
+void wait_for_client_on(server_t *server, const char *http_port, void(callback)(void))
 {
 
 	struct addrinfo *bind_address = get_address_info(0, http_port, SOCK_STREAM);
@@ -206,12 +218,10 @@ void send_to_client(response_t *res, char *message, uint16_t status)
 	res->status = status;
 }
 
-
-
 void close_server(int _)
 {
 
 	close(server_socket);
 	printf("Closing server!!!...\n");
 }
-#endif //H_SERVER_HTTP
+#endif // H_SERVER_HTTP

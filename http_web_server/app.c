@@ -6,6 +6,8 @@ const char port[] ="8080";
 
 void hello(request_t *req, response_t *res)
 {
+	printf("%s\n", req->body);
+
 	send_to_client(res, "Hoy ya es lunes", 200);
 }
 
